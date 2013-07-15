@@ -57,7 +57,7 @@ var signal = function()
             this.slotArray[signal_name] = new Array()
         }
         this.slotArray[signal_name][slot_name] = slot_function
-        console.log("На прослушивание сигнала " + signal_name + " добавлен слот " + slot_name + "")
+        if(this.debug) console.log("На прослушивание сигнала " + signal_name + " добавлен слот " + slot_name + "")
     }
 
     /**
@@ -85,11 +85,11 @@ var signal = function()
     {
         if (this.slotArray[signal_name] == undefined)
         {
-            console.log("На сигнал " + signal_name + " нет подписчиков")
+            if(this.debug) console.log("На сигнал " + signal_name + " нет подписчиков")
         }
         else
         {
-            console.log("Сигнал " + signal_name + " подписаны слоты")
+            if(this.debug) console.log("Сигнал " + signal_name + " подписаны слоты")
             for (var slot in this.slotArray[signal_name])
             {
                 this.slotArray[signal_name][slot](param,signal_name)
@@ -124,7 +124,7 @@ var signal = function()
         //console.log( e.newValue )
         var data = JSON.parse(e.newValue);
 
-        console.log( data.name )
+        if(this.debug) console.log( data.name )
         //console.log( data.arguments )
         new signal().emit( data.name, data.param )
     }
@@ -138,5 +138,7 @@ var signal = function()
         document.attachEvent('onstorage', storageEventHandler );
     }
 }
+
 signal.prototype.slotArray = new Array()
+signal.prototype.debug = false
 
