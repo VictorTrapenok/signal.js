@@ -23,18 +23,35 @@ var signal = function()
 {
     /**
      * Подписывает слот на сигнал
+     * 
+     * Если передать два параметра то они обработаются как  connect( signal_name, slot_function )
+     * Если передать три параметра то они обработаются как  connect( slot_name, signal_name, slot_function )
+     * 
      * @param slot_name Имя слота
      * @param signal_name Имя сигнала
      * @param slot_function Функция вызваемая при вызове слота, должна иметь следующию сигнатуру function(signal_name,param){}
      * 
      * <code>
      * Пример использования
-     * new signal().emit("catalogControl.OpenObject",{})
+     * new new signal().emit("catalogControl.OpenObject",{})
      *
      * </code>
      */
     this.connect = function(slot_name, signal_name, slot_function)
     {
+        
+        if(slot_function === undefined)
+        {
+            slot_function = signal_name
+            signal_name = slot_name
+            
+            slot_name = ""
+            for(var i=0; i<16; i++)
+            {
+                slot_name += "_"+Math.random()
+            }
+        }
+        
         if (this.slotArray[signal_name] == undefined)
         {
             this.slotArray[signal_name] = new Array()
@@ -75,7 +92,7 @@ var signal = function()
             console.log("Сигнал " + signal_name + " подписаны слоты")
             for (var slot in this.slotArray[signal_name])
             {
-                this.slotArray[signal_name][slot](signal_name, param)
+                this.slotArray[signal_name][slot](param,signal_name)
             }
         }
     }
@@ -87,18 +104,7 @@ var signal = function()
      */
     this.send_emit = function (signal_name, param) 
     {
-        if (this.slotArray[signal_name] == undefined)
-        {
-            console.log("На сигнал " + signal_name + " нет подписчиков")
-        }
-        else
-        {
-            console.log("Сигнал " + signal_name + " подписаны слоты")
-            for (var slot in this.slotArray[signal_name])
-            {
-                this.slotArray[signal_name][slot](signal_name, param)
-            }
-        }
+        this.emit(signal_name, param)
 
         if(window['localStorage'] !==undefined  )
         {
@@ -120,7 +126,7 @@ var signal = function()
 
         console.log( data.name )
         //console.log( data.arguments )
-        Signal().emit( data.name, data.param )
+        new signal().emit( data.name, data.param )
     }
 
     if( "addEventListener" in window )
