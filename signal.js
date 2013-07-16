@@ -129,14 +129,17 @@ var signal = function()
                 this.slotArray[signal_name][slot](param,signal_name)
             }
             
+        }
+        
+        if(this.OrderedSlotArray[signal_name])
+        {
+            if(this.debug) console.log("Сигнал " + signal_name + " подписаны сортируемые слоты")
             this.OrderedSlotArray[signal_name].sort(function(a,b){return b.priority-a.priority;})
             for (var slot in this.OrderedSlotArray[signal_name])
             {
                 this.OrderedSlotArray[signal_name][slot].f(param,signal_name)
             }
-            
-             
-        }
+        } 
     }
      
     /*
