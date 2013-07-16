@@ -29,7 +29,7 @@ var signal = function()
      * 
      * @param slot_name Имя слота
      * @param signal_name Имя сигнала
-     * @param slot_function Функция вызваемая при вызове слота, должна иметь следующию сигнатуру function(signal_name,param){}
+     * @param slot_function Функция вызваемая при вызове слота, должна иметь следующию сигнатуру function(param, signal_name){}
      * 
      * <code>
      * Пример использования
@@ -58,6 +58,40 @@ var signal = function()
         }
         this.slotArray[signal_name][slot_name] = slot_function
         if(this.debug) console.log("На прослушивание сигнала " + signal_name + " добавлен слот " + slot_name + "")
+    }
+    
+    
+    /**
+     * Подписывает слот на сигнал, но позволяет указать численое значение приоритета вызова
+     * Подписаные функции вызывабтся в соответсвии с заявленым приоритетом (выше приоритет раньше вызовется). 
+     * Если есть две функции с одинаковым приоритетом то они фызываются в соответвии с порядком их добавления.
+     * 
+     * Функции подписаные чере connect будут вызваны перед функциями подписаными через iconnect
+     * 
+     * @param priority Приоритет вызова
+     * @param signal_name Имя сигнала
+     * @param slot_function Функция вызваемая при вызове слота, должна иметь следующию сигнатуру function(param, signal_name){}
+     * 
+     * <code>
+     * Пример использования
+     * new new signal().iconnect("catalogControl.OpenObject",30, function(param, signal_name){ console.log([signal_name,param]) })
+     * 
+     * 
+     * new new signal().emit("catalogControl.OpenObject",{})
+     *
+     * </code>
+     */
+    this.iconnect = function(signal_name, priority, slot_function)
+    { 
+        
+        if (this.OrderedSlotArray[signal_name] == undefined)
+        {
+            this.OrderedSlotArray[signal_name] = new Array()
+        }
+         
+        
+        this.OrderedSlotArray[signal_name][this.OrderedSlotArray[signal_name].length] = {f:slot_function,priority:priority}
+        if(this.debug) console.log("На прослушивание сигнала " + signal_name + " добавлен слот " + this.OrderedSlotArray[signal_name].length-1 + " с приоритетом "+priority)
     }
 
     /**
@@ -94,6 +128,14 @@ var signal = function()
             {
                 this.slotArray[signal_name][slot](param,signal_name)
             }
+            
+            this.OrderedSlotArray[signal_name].sort(function(a,b){return b.priority-a.priority;})
+            for (var slot in this.OrderedSlotArray[signal_name])
+            {
+                this.OrderedSlotArray[signal_name][slot].f(param,signal_name)
+            }
+            
+             
         }
     }
      
@@ -139,6 +181,7 @@ var signal = function()
     }
 }
 
+signal.prototype.OrderedSlotArray = new Array()
 signal.prototype.slotArray = new Array()
 signal.prototype.debug = false
 
