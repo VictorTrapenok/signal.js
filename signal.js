@@ -44,12 +44,7 @@ var signal = function()
         {
             slot_function = signal_name
             signal_name = slot_name
-            
-            slot_name = ""
-            for(var i=0; i<16; i++)
-            {
-                slot_name += "_"+Math.random()
-            }
+            slot_name = Math.random()+"_"+Math.random()
         }
         
         if (this.slotArray[signal_name] == undefined)
@@ -112,10 +107,12 @@ var signal = function()
 
     /**
      * Вызывает слоты подписаные на сигнал signal_name и каждому из них передаёт аруметы signal_name - имя вызвавшего сигнала, и param - объект с параметрами для слота)
+     * В добавок ретранслирует сигнал в дочернии iframe если они есть и в родительское окно если оно есть
      * @param signal_name Имя сигнала
      * @param param Параметры переданые слоту при вызове в втором аргументе
+     * @param excluded_window служебный аргумент, указывает на окно в которое не надо ркетранслировать сообщение
      */
-    this.emit = function(signal_name, param)
+    this.emit = function(signal_name, param, excluded_window)
     {
         if (this.slotArray[signal_name] == undefined)
         {
@@ -140,6 +137,38 @@ var signal = function()
                 this.OrderedSlotArray[signal_name][slot].f(param,signal_name)
             }
         } 
+        
+        var frames = document.getElementsByTagName("iframe");
+        if(frames)
+        {
+            for(var i = 0; i< frames.length; i++)
+            { 
+                if(frames[i].contentWindow !== excluded_window)
+                { 
+                    if(this.debug) console.log("Сигнал " + signal_name + " отправлен в фреим " + i)
+                    frames[i].contentWindow.postMessage({
+                        name:signal_name,
+                        param:param,
+                        author:'signal.js',
+                        author_id:this.custom_id
+                    },"*");
+                }
+            }
+        }
+        
+        
+        if( window.parent !== window && excluded_window !== window.parent )
+        {
+            if(this.debug) console.log("Сигнал " + signal_name + " отправлен роидительское окно... " )
+            window.parent.postMessage({
+                        name:signal_name,
+                        param:param,
+                        author:'signal.js',
+                        author_id:this.custom_id
+                    },"*");
+        }
+        
+        
     }
      
     /*
@@ -153,38 +182,63 @@ var signal = function()
 
         if(window['localStorage'] !==undefined  )
         {
-            var curent_custom_id = ""
-            for(var i=0; i<16; i++)
-            {
-                curent_custom_id += "_"+Math.random()
-            }
+            var curent_custom_id = Math.random()+"_"+Math.random()+"_"+Math.random()+"_"+Math.random()+"_"+Math.random()
 
             last_custom_id = curent_custom_id.replace(/0\./img,"")
             window['localStorage']['CustomUserSignal_StorageEmit']= JSON.stringify({name:eName, custom_id:curent_custom_id, param:param}); 
         }
     }
 
-    function storageEventHandler(e)
-    {
-        //console.log( e.newValue )
-        var data = JSON.parse(e.newValue);
+     
 
-        if(this.debug) console.log( data.name )
-        //console.log( data.arguments )
-        new signal().emit( data.name, data.param )
-    }
-
-    if( "addEventListener" in window )
-    {
-        window.addEventListener('storage', storageEventHandler, false);
-    }
-    else
-    {
-        document.attachEvent('onstorage', storageEventHandler );
-    }
 }
 
 signal.prototype.OrderedSlotArray = new Array()
 signal.prototype.slotArray = new Array()
-signal.prototype.debug = false
+signal.prototype.debug = true
+signal.prototype.custom_id = Math.random()+"_"+Math.random()+"_"+Math.random()+"_"+Math.random()
+signal.prototype.init = false
+
+function storageEventHandler(e)
+{
+    //console.log( e.newValue )
+    var data = JSON.parse(e.newValue);
+
+    if(this.debug) console.log( data.name )
+    //console.log( data.arguments )
+    new signal().emit( data.name, data.param )
+}
+
+function messageEventHandler(e)
+{ 
+    if(e.data.author == 'signal.js' && e.data.author_id !== signal.prototype.custom_id)
+    {  
+        if(e.source !== window)
+        {
+            if(this.debug) console.log( ["messageEventHandler", document.title, e] ) 
+            new signal().emit( e.data.name, e.data.param, e.source)
+        }
+        
+        if( window.parent.signal.prototype.custom_id !== signal.prototype.custom_id )// Определяет что родительское окно не равно текущему окну
+        {
+            if(this.debug) console.log( ["messageEventHandler", "ретрансляция в родительское окно"] ) 
+            window.parent.postMessage(e.data,"*");
+        }
+    }
+}
+
+if(!signal.prototype.init)
+{
+    signal.prototype.init = true
+    if( window.addEventListener )
+    {
+        window.addEventListener('storage', storageEventHandler, false);
+        window.addEventListener("message", messageEventHandler,false);
+    }
+    else
+    {
+        document.attachEvent('onstorage', storageEventHandler );
+        window.attachEvent("onmessage", messageEventHandler);
+    }
+}
 
