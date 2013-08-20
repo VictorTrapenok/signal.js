@@ -159,7 +159,7 @@ var signal = function()
         
         if( window.parent !== window && excluded_window !== window.parent )
         {
-            if(this.debug) console.log("Сигнал " + signal_name + " отправлен роидительское окно... " )
+            if(this.debug) console.log("Сигнал " + signal_name + " отправлен в роидительское окно... " )
             window.parent.postMessage({
                         name:signal_name,
                         param:param,
@@ -195,7 +195,7 @@ var signal = function()
 
 signal.prototype.OrderedSlotArray = new Array()
 signal.prototype.slotArray = new Array()
-signal.prototype.debug = true
+signal.prototype.debug = false
 signal.prototype.custom_id = Math.random()+"_"+Math.random()+"_"+Math.random()+"_"+Math.random()
 signal.prototype.init = false
 
